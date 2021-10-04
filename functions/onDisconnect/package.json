@@ -1,0 +1,12 @@
+{
+  "name": "onDisconnect",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "zip": "zip -r index.zip ./*"
+  },
+  "dependencies": {
+    "aws-sdk": "^2.999.0"
+  }
+}
