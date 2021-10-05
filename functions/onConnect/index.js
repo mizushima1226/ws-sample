@@ -3,13 +3,14 @@ const AWS = require("aws-sdk");
 exports.handler = function (event, context, callback) {
   try {
     console.info("event", event)
+    const { queryStringParameters: {category}, requestContext: {connectionId} } = event
     // リクエストメッセージからconnectionIdを取得して
     const params = {
       TableName: "ws_connection",
       Item: {
-        category: "task",
-        connection_id: event.requestContext.connectionId,
-        connected_at: new Date().toISOString()
+        connectionId,
+        category,
+        connectedAt: new Date().toISOString()
       }
     };
     

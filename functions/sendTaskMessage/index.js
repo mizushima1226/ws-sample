@@ -2,17 +2,22 @@ const AWS = require('aws-sdk');
 const client = new AWS.DynamoDB.DocumentClient();
 
 exports.handler = async (event, ctx, callback) => {
-  console.info("event", event);
-  console.info("ctx", ctx);
-
+  const {data} = JSON.parse(event.body);
+  const jsonData = JSON.stringify(data);
+  
   const params = {
-    TableName: "",
-    Key: {
-      "category": "",
-    }
+    TableName: "ws_connection",
+    IndexName: "category-connectionId-index",
+    KeyConditionExpression: "#c = :category",
+    ExpressionAttributeNames: {
+      "#c": "category",
+    },
+    ExpressionAttributeValues: {
+      ":category": data.category,
+    },
   };
 
-  client.get(params, (err, data) => {
+  client.query(params, (err, data) => {
     if(err) {
       console.error("get error", err)
       const response = {
@@ -22,16 +27,17 @@ exports.handler = async (event, ctx, callback) => {
       callback(null, response);
       return;
     }
-    console.info("get item", data);
+    const manager = new AWS.ApiGatewayManagementApi({
+    apiVersion: '2018-11-29',
+      endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
+    });
+
+    data.Items?.forEach((item) => {
+      if(item.connectionId === event.requestContext.connectionId) return;
+      manager.postToConnection({ ConnectionId: item.connectionId, Data: jsonData }).promise();
+    });
+
   });
-  
-  // const connectionId = event.requestContext.connectionId;
-  // const manager = new AWS.ApiGatewayManagementApi({
-  //   apiVersion: '2018-11-29',
-  //   endpoint: event.requestContext.domainName + '/' + event.requestContext.stage
-  // });
-  
-  // await manager.postToConnection({ ConnectionId: connectionId, Data: connectionId + ":" + Date.now().toString() }).promise();
   
   const response = {
       statusCode: 200,
